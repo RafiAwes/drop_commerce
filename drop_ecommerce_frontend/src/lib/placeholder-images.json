@@ -1,0 +1,46 @@
+{
+  "placeholderImages": [
+    {
+      "id": "hero-fashion",
+      "description": "Premium Fashion Hero",
+      "imageUrl": "https://images.unsplash.com/photo-1532453288672-3a27e9be9efd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxmYXNoaW9uJTIwY2xvdGhpbmd8ZW58MHx8fHwxNzcyNTI3MzUwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "fashion clothing"
+    },
+    {
+      "id": "watch-1",
+      "description": "Elegant Wristwatch",
+      "imageUrl": "https://images.unsplash.com/photo-1524805444758-089113d48a6d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8bHV4dXJ5JTIwd2F0Y2h8ZW58MHx8fHwxNzcyNTA0MTM0fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "luxury watch"
+    },
+    {
+      "id": "shoes-1",
+      "description": "Minimalist Sneakers",
+      "imageUrl": "https://images.unsplash.com/photo-1641400571360-7d8ee54bab53?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxtaW5pbWFsaXN0JTIwc25lYWtlcnN8ZW58MHx8fHwxNzcyNTU2NDk1fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "minimalist sneakers"
+    },
+    {
+      "id": "tech-1",
+      "description": "Modern Headphones",
+      "imageUrl": "https://images.unsplash.com/photo-1657223144998-e5aa4fa2db7c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHx3aXJlbGVzcyUyMGhlYWRwaG9uZXN8ZW58MHx8fHwxNzcyNDY3ODQwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "wireless headphones"
+    },
+    {
+      "id": "bag-1",
+      "description": "Leather Handbag",
+      "imageUrl": "https://images.unsplash.com/photo-1622560257067-108402fcedc0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxsZWF0aGVyJTIwYmFnfGVufDB8fHx8MTc3MjU1MzY2OHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "leather bag"
+    },
+    {
+      "id": "perfume-1",
+      "description": "Premium Fragrance",
+      "imageUrl": "https://images.unsplash.com/photo-1541643600914-78b084683601?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxwZXJmdW1lJTIwYm90dGxlfGVufDB8fHx8MTc3MjQ3NTcwMXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "perfume bottle"
+    },
+    {
+      "id": "camera-1",
+      "description": "Vintage Camera",
+      "imageUrl": "https://images.unsplash.com/photo-1516961642265-531546e84af2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHx2aW50YWdlJTIwY2FtZXJhfGVufDB8fHx8MTc3MjU1NjQ5NHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "vintage camera"
+    }
+  ]
+}

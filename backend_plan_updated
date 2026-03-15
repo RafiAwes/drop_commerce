@@ -1,0 +1,194 @@
+# Detailed Backend and Architecture Plan for E-commerce App
+
+## Overview
+Based on a deep analysis of the frontend application (`cartflow`), the backend logic requires significantly more depth than a standard e-commerce template. The frontend expects advanced user tiering, multiple saved addresses/payment methods, product variants, wishlists, a robust promotional coupon engine, global store configurations (shipping zones, taxation, maintenance modes), and Role-Based Access Control (RBAC) for administration. 
+
+This document outlines the meticulously detailed backend architecture, utilizing **Django REST Framework (DRF)**, **PostgreSQL**, **Docker**, and **GitHub Actions** for CI/CD.
+
+---
+
+## Django Apps Structure
+To ensure clean separation of concerns and maintainability, the backend will be divided into the following Django apps:
+
+1.  **`accounts`**: Manages custom User models, UserProfiles (rewards/tiers), UserAddresses, and UserPaymentMethods.
+2.  **`catalog`**: Handles Categories, Products, ProductVariants (options), and User Wishlists.
+3.  **`orders`**: Manages shopping Carts, CartItems, the Checkout flow, and finalized Orders/OrderItems.
+4.  **`promotions`**: Contains the logic for the Coupon engine and discount validation.
+5.  **`core`**: Contains global StoreConfiguration (singleton), ShippingZones, and common utility logic.
+
+---
+
+## Comprehensive Database Schema (PostgreSQL)
+
+### 1. Core Users, Access & Profiles
+The standard user model is extended to accommodate advanced tiering, fine-grained notification settings, and staff RBAC (Role-Based Access Control).
+
+*   **[User](file:///f:/Webdevelopment/Full%20apps/drop%20ecommerce/drop_ecommerce/src/lib/store.ts#11-22)** (Custom Django Auth Model)
+    *   `id` (UUID, Primary Key)
+    *   `email` (String, Unique)
+    *   `password` (String, Hashed)
+    *   `first_name` (String)
+    *   `last_name` (String)
+    *   `phone_number` (String, Optional)
+    *   `role` (Enum: `USER`, `ADMIN_SUPER`, `ADMIN_EDITOR`, `ADMIN_SUPPORT`)
+    *   `is_active` (Boolean, Default True)
+    *   `date_joined` (DateTime, Auto-Now-Add)
+
+*   **`UserProfile`** (One-to-One linked to [User](file:///f:/Webdevelopment/Full%20apps/drop%20ecommerce/drop_ecommerce/src/lib/store.ts#11-22))
+    *   `user` (OneToOneField)
+    *   `reward_points` (Integer, Default 0)
+    *   `tier_level` (Enum: `BRONZE`, `SILVER`, `GOLD`, Default `BRONZE`)
+    *   `order_status_notifications` (Boolean, Default True)
+    *   `marketing_notifications` (Boolean, Default False)
+    *   `avatar_url` (String/URLField, Nullable)
+
+### 2. User Vault (Addresses & Payments)
+*   **`UserAddress`**
+    *   `id` (UUID, Primary Key)
+    *   `user` (ForeignKey to [User](file:///f:/Webdevelopment/Full%20apps/drop%20ecommerce/drop_ecommerce/src/lib/store.ts#11-22))
+    *   `label` (String, e.g., "Home", "Office")
+    *   `full_name` (String)
+    *   `street_address` (String)
+    *   `city` (String)
+    *   `state_province` (String)
+    *   `postal_code` (String)
+    *   `country` (String)
+    *   `is_default` (Boolean)
+
+*   **`UserPaymentMethod`** (Tokenized reference, never stores actual card numbers)
+    *   `id` (UUID, Primary Key)
+    *   `user` (ForeignKey to [User](file:///f:/Webdevelopment/Full%20apps/drop%20ecommerce/drop_ecommerce/src/lib/store.ts#11-22))
+    *   `provider_type` (Enum: `VISA`, `MASTERCARD`, `PAYPAL`)
+    *   `provider_token` (String, Stripe Customer/PaymentMethod ID)
+    *   `last4` (String, Max Length 4, Nullable)
+    *   `expiry_month` (Integer, Nullable)
+    *   `expiry_year` (Integer, Nullable)
+    *   `paypal_email` (String, Nullable)
+    *   `is_default` (Boolean)
+
+### 3. Product Catalog & Engagement
+Products are complex, supporting variants (size/color) and user wishlists.
+
+*   **`Category`**
+    *   `id` (UUID, Primary Key), `name` (String, Unique), `slug` (String, Unique), `parent` (ForeignKey to `Category`, Nullable for nesting)
+    
+*   **[Product](file:///f:/Webdevelopment/Full%20apps/drop%20ecommerce/drop_ecommerce/src/lib/products.ts#1-12)**
+    *   `id` (UUID, Primary Key), `category` (ForeignKey), `title` (String), `slug` (String, Unique)
+    *   `description` (Text), `base_price` (Decimal), `stock_quantity` (Integer)
+    *   `image_url` (String), `rating_average` (Float, Default 0.0), `rating_count` (Integer, Default 0)
+    *   `is_active` (Boolean, Default True)
+
+*   **`ProductVariant`** (Handles specific options like "Size 8" or "Midnight Black")
+    *   `id` (UUID, Primary Key)
+    *   `product` (ForeignKey to [Product](file:///f:/Webdevelopment/Full%20apps/drop%20ecommerce/drop_ecommerce/src/lib/products.ts#1-12))
+    *   `attribute_name` (String, e.g., "Color", "Size")
+    *   `attribute_value` (String, e.g., "Red", "10")
+    *   `sku_override` (String, Unique, Nullable)
+    *   `price_adjustment` (Decimal, Default 0.00)
+    *   `stock_quantity` (Integer)
+
+*   **`WishlistItem`**
+    *   `user` (ForeignKey to [User](file:///f:/Webdevelopment/Full%20apps/drop%20ecommerce/drop_ecommerce/src/lib/store.ts#11-22)), `product` (ForeignKey to [Product](file:///f:/Webdevelopment/Full%20apps/drop%20ecommerce/drop_ecommerce/src/lib/products.ts#1-12)), `added_at` (DateTime) - *Unique Together constraint on User+Product*
+
+### 4. Cart, Checkout & Orders
+Orders retain historic price data, applied discounts, and exact shipping logistics.
+
+*   **[Cart](file:///f:/Webdevelopment/Full%20apps/drop%20ecommerce/drop_ecommerce/src/lib/store.ts#52-97)** & **[CartItem](file:///f:/Webdevelopment/Full%20apps/drop%20ecommerce/drop_ecommerce/src/lib/store.ts#7-10)** (Standard mapping of User/Session to [Product](file:///f:/Webdevelopment/Full%20apps/drop%20ecommerce/drop_ecommerce/src/lib/products.ts#1-12) and/or `ProductVariant` + `quantity`).
+
+*   **[Order](file:///f:/Webdevelopment/Full%20apps/drop%20ecommerce/drop_ecommerce/src/lib/store.ts#23-30)**
+    *   `id` (UUID/String prefix like 'FLOW-12345')
+    *   `user` (ForeignKey to [User](file:///f:/Webdevelopment/Full%20apps/drop%20ecommerce/drop_ecommerce/src/lib/store.ts#11-22))
+    *   `status` (Enum: `PENDING`, `PROCESSING`, `SHIPPED`, `DELIVERED`, `CANCELLED`)
+    *   `subtotal` (Decimal)
+    *   `tax_amount` (Decimal)
+    *   `shipping_fee` (Decimal)
+    *   `discount_amount` (Decimal)
+    *   `total_amount` (Decimal)
+    *   `applied_coupon` (ForeignKey to [Coupon](file:///f:/Webdevelopment/Full%20apps/drop%20ecommerce/drop_ecommerce/src/app/admin/coupons/page.tsx#63-270), Nullable)
+    *   `shipping_address` (JSONField - Snapshot of address at time of order)
+    *   `billing_address` (JSONField - Snapshot)
+    *   `payment_status` (String: `PAID`, `FAILED`, `PENDING`)
+    *   `created_at` (DateTime), `updated_at` (DateTime)
+
+*   **`OrderItem`**
+    *   `order` (ForeignKey), `product` (ForeignKey), `variant` (ForeignKey, Nullable)
+    *   `quantity` (Integer), `unit_price_at_purchase` (Decimal)
+
+### 5. Promotional Engine & Global Store Configurations
+Supports the complex admin dashboard for coupons and store settings.
+
+*   **[Coupon](file:///f:/Webdevelopment/Full%20apps/drop%20ecommerce/drop_ecommerce/src/app/admin/coupons/page.tsx#63-270)**
+    *   `id` (UUID, Primary Key), `code` (String, Unique, Uppercase)
+    *   `discount_type` (Enum: `PERCENTAGE`, `FIXED_AMOUNT`, `FREE_SHIPPING`)
+    *   `discount_value` (Decimal)
+    *   `usage_limit` (Integer, Nullable), `current_usage` (Integer, Default 0)
+    *   `min_order_value` (Decimal, Default 0.00)
+    *   `valid_from` (DateTime), `expires_at` (DateTime, Nullable)
+    *   `is_active` (Boolean, Default True)
+
+*   **`StoreConfiguration`** (Singleton Table - Only 1 row ever exists)
+    *   `store_name`, `contact_email`, `currency_code` (e.g. 'USD'), `time_zone`
+    *   `measurement_system` (Enum: `METRIC`, `IMPERIAL`)
+    *   `maintenance_mode` (Boolean, Default False), `robots_indexing` (Boolean, Default True)
+    *   `auto_vat_calculation` (Boolean)
+
+*   **`ShippingZone`**
+    *   `id` (UUID), `region_name` (String), `included_countries` (ArrayField/Text), `flat_rate` (Decimal, Nullable - If null, calculated dynamically)
+
+---
+
+## Detailed API Endpoints (DRF)
+
+### Public & Authentication (`/api/v1/`)
+*   `POST /auth/register/` - Create User & UserProfile.
+*   `POST /auth/login/` - Returns JWT Access/Refresh tokens.
+*   `GET/PATCH /account/profile/` - Manage personal info, reward tiers, and notification flags.
+*   `GET/POST/DELETE /account/addresses/` - CRUD for `UserAddress` (Handle `is_default` toggles).
+*   `GET/POST/DELETE /account/payments/` - Manage `UserPaymentMethod` token references.
+*   `GET/POST/DELETE /account/wishlist/` - Manage liked products.
+
+### Commerce Engine (`/api/v1/`)
+*   `GET /products/` - List products. Queries: `?category=slug&sort=price&in_stock=true`.
+*   `GET /products/{slug}/` - Includes nested array of `ProductVariant` options.
+*   `GET /categories/` - Returns nested tree structure of categories.
+*   `POST /cart/sync/` - Syncs localstorage guest cart with DB on login.
+*   `GET/POST/PUT/DELETE /cart/items/` - Standard cart management.
+*   `POST /checkout/validate-coupon/` - Checks coupon logic against cart total.
+*   `POST /checkout/process/` - Converts Cart to Order, charges Payment Gateway, adjusts Stock, and awards User Reward Points.
+
+### Admin Dashboard API (`/api/v1/admin/`) - *Requires `role != USER`*
+*   **Analytics**: `GET /analytics/overview/` - Returns revenue, order counts, new customers for graphs.
+*   **Coupons**: `GET/POST/PUT/DELETE /coupons/` - Full CRUD for the promotional engine.
+*   **Orders**: `GET /orders/` (List all), `PATCH /orders/{id}/status/` (Update picking/shipping status).
+*   **Catalog**: `POST/PUT /products/`, `POST/PUT /categories/` - Manage inventory and variants.
+*   **Settings**: `GET/PATCH /settings/global/` - Update `StoreConfiguration`.
+*   **Shipping**: `GET/POST/PUT /settings/shipping-zones/`.
+*   **Staff**: `GET/POST /staff/` - Invite/manage admin staff (Requires `ADMIN_SUPER`).
+
+---
+
+## Infrastructure and Deployment Architecture
+
+### Docker Containerization
+*   **`Dockerfile`**: Python 3.11 base. Uses `gunicorn` for WSGI serving.
+*   **`docker-compose.yml`**:
+    *   `web`: The Django application (Port 8000).
+    *   `db`: PostgreSQL 15 database with persistent volume mounting.
+    *   `redis`: For caching sessions, cart states, and Celery task broker.
+    *   `worker`: Celery worker for asynchronous tasks (e.g., sending order confirmation emails).
+
+### GitHub Actions CI/CD (`.github/workflows/main.yml`)
+1.  **Continuous Integration (CI)**:
+    *   Triggered on push to `main` or PRs.
+    *   Spins up test PostgreSQL and Redis containers.
+    *   Runs `flake8`/`black` for linting.
+    *   Executes Django test suite (`python manage.py test`).
+2.  **Continuous Deployment (CD)**:
+    *   Triggered on merge to `main` (if CI passes).
+    *   Builds the Docker image and pushes to GitHub Container Registry (GHCR) or Docker Hub.
+    *   Executes SSH command to target server to `docker-compose pull && docker-compose up -d`.
+    *   Runs migrations automatically via `.sh` entrypoint or explicit action step.
+
+## Verification Plan
+1.  **Component Tests**: Write DRF `APITestCase` tests for Coupon validity logic, Cart total math (including taxes & shipping), and User access control (RBAC).
+2.  **End-to-End Environment**: `docker-compose up --build` locally. Connect frontend Next.js to the local Django port `8000`. Perform a full registration, cart add, checkout, and admin dashboard status update flow.

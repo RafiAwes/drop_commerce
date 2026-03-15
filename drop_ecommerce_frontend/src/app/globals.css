@@ -1,0 +1,101 @@
+@import "tailwindcss";
+
+@theme {
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --font-body: var(--font-sans);
+  --font-headline: var(--font-sans);
+}
+
+@layer base {
+  :root {
+    --background: 210 40% 98%; /* Ghost White #f8fafc */
+    --foreground: 222 47% 11%; /* Midnight Blue #0f172a */
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 243 75% 59%; /* Electric Indigo #4f46e5 */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 214 32% 91%; /* Slate-200 #e2e8f0 */
+    --secondary-foreground: 222 47% 11%;
+    --muted: 214 32% 91%;
+    --muted-foreground: 215 16% 47%; /* Cool Gray #64748b */
+    --accent: 45 93% 58%; /* Soft Gold #fbbf24 */
+    --accent-foreground: 222 47% 11%;
+    --destructive: 343 82% 50%; /* Rose Red #e11d48 */
+    --destructive-foreground: 0 0% 98%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 243 75% 59%;
+    --radius: 0.75rem;
+  }
+  .dark {
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
+    --card: 224 71% 4%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222 47% 11%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 243 75% 59%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 45 93% 58%;
+    --accent-foreground: 222 47% 11%;
+    --destructive: 343 82% 50%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 243 75% 59%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-body;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-headline text-foreground;
+  }
+  p {
+    @apply text-muted-foreground leading-relaxed;
+  }
+}
+
+@layer components {
+  .glass-nav {
+    @apply sticky top-0 z-50 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-border/50 shadow-sm;
+  }
+  .btn-primary {
+    @apply bg-primary text-white hover:bg-[#4338ca] transition-all duration-200 shadow-md hover:shadow-lg active:scale-95;
+  }
+  .premium-text {
+    @apply bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent font-bold;
+  }
+}
