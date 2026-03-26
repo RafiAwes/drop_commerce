@@ -2,6 +2,7 @@ from pathlib import Path
 import os 
 from dotenv import load_dotenv
 from urllib.parse import parse_qsl, urlparse
+from datetime import timedelta
 
 load_dotenv()
 
@@ -32,7 +33,32 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "accounts",
+    "rest_framework",
+    "rest_framework_simplejwt", 
 ]
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTIACTION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    )
+}
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60), # Keep access tokens short-lived
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),    # Refresh tokens last longer
+    'ROTATE_REFRESH_TOKENS': True,                  # Issue a new refresh token on use
+    'BLACKLIST_AFTER_ROTATION': True,               # Secure: invalidate old refresh tokens
+    'UPDATE_LAST_LOGIN': True,                      # Updates the user's last_login field
+    
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY, # Uses your Django secret key
+    
+    # Since our Custom User uses 'email' as the username field:
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+}
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -68,7 +94,7 @@ WSGI_APPLICATION = "drop_commerce.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-tmpPostgres = urlparse(os.getenv("DATABASE_URL"))
+tmpPostgres = urlparse(os.getenv("DATABASE_URL", ""))
 
 DATABASES = {
     "default": {
